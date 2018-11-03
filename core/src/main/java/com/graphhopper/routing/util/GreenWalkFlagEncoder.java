@@ -22,7 +22,10 @@ import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.routing.weighting.GreenWalkWeighting;
 import com.graphhopper.routing.weighting.PriorityWeighting;
 import com.graphhopper.util.PMap;
+import com.opencsv.CSVReader;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 import static com.graphhopper.routing.util.PriorityCode.*;
@@ -39,6 +42,7 @@ import static com.graphhopper.routing.util.PriorityCode.*;
  */
 public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
     public static final int GREENNESS_KEY = 113;
+    public static final int POLLUTION_KEY = 114;
     private static final int SPEED = 5;
     private final Set<String> safeHighwayTags = new HashSet<>();
     private final Set<String> allowedHighwayTags = new HashSet<>();
@@ -50,6 +54,13 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
     private EncodedValue priorityWayEncoder;
     private EncodedValue relationCodeEncoder;
     private EncodedValue greennessEncoder;
+    private EncodedValue pollutionEncoder;
+
+    private double[][] pollution = new double[100][100];
+    private double pollutionXmin;
+    private double pollutionXmax;
+    private double pollutionYmin;
+    private double pollutionYmax;
 
     /**
      * Should be only instantiated via EncodingManager
@@ -131,6 +142,23 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
 
         maxPossibleSpeed = SPEED;
 
+        // READ POLLUTION
+        String csvFile = "./pollution.csv";
+
+        CSVReader reader = null;
+        int k = 0;
+        try {
+            reader = new CSVReader(new FileReader(csvFile));
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                k++;
+                pollution[k / 1000][k % 1000] = Double.parseDouble(line[2]);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //
+
         init();
     }
 
@@ -152,6 +180,9 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
 
         greennessEncoder = new EncodedValue("Greenness", shift, 4, 1, 0, 9);
         shift += greennessEncoder.getBits();
+
+        pollutionEncoder = new EncodedValue("Pollution", shift, 4, 1, 0, 9);
+        shift += pollutionEncoder.getBits();
 
         return shift;
     }
@@ -315,6 +346,11 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
 
         flags = greennessEncoder.setValue(flags, greenness);
 
+        // COMPUTE POLLUTION
+        int pollution = 0; // X * 4 + 1
+
+        flags = pollutionEncoder.setValue(flags, pollution);
+
         return flags;
     }
 
@@ -325,6 +361,8 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
                 return (double) priorityWayEncoder.getValue(flags) / BEST.getValue();
             case GreenWalkFlagEncoder.GREENNESS_KEY:
                 return (double) greennessEncoder.getValue(flags);
+            case GreenWalkFlagEncoder.POLLUTION_KEY:
+                return (double) pollutionEncoder.getValue(flags);
             default:
                 return super.getDouble(flags, key);
         }

@@ -40,11 +40,16 @@ public class GreenWalkWeighting extends PriorityWeighting {
     public double calcWeight(EdgeIteratorState edge, boolean reverse, int prevOrNextEdgeId) {
         double priority = flagEncoder.getDouble(edge.getFlags(), KEY);
         double greenness = flagEncoder.getDouble(edge.getFlags(), GreenWalkFlagEncoder.GREENNESS_KEY);
+        double pollution = flagEncoder.getDouble(edge.getFlags(), GreenWalkFlagEncoder.POLLUTION_KEY);
 
         double distance = edge.getDistance();
         double factor = 1 / (0.5 + priority);
         if (greenness > 0) {
             factor *= 1 / greenness;
+        }
+
+        if (pollution > 0) {
+            factor *= (pollution - 5.0) / 8.0;
         }
 
         factor = Math.max(factor, minFactor);
