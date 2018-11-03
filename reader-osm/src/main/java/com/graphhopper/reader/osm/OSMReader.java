@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
@@ -120,6 +121,12 @@ public class OSMReader implements DataReader {
     private KdTree trees = new KdTree();
     private int treesCount = 0;
 
+    private double[][] pollutions = new double[100][100];
+    private double Latmin = 51;
+    private double Latmax = 51.082;
+    private double Lonmin = 3.61;
+    private double Lonmax = 3.80;
+
     public OSMReader(GraphHopperStorage ghStorage) {
         this.ghStorage = ghStorage;
         this.graph = ghStorage;
@@ -130,6 +137,42 @@ public class OSMReader implements DataReader {
         osmNodeIdToNodeFlagsMap = new GHLongLongHashMap(200, .5f);
         osmWayIdToRouteWeightMap = new GHLongLongHashMap(200, .5f);
         pillarInfo = new PillarInfo(nodeAccess.is3D(), ghStorage.getDirectory());
+
+        // READ POLLUTION
+        String csvFile = "./pollution.csv";
+
+        BufferedReader br = null;
+        String line = "";
+        String cvsSplitBy = ",";
+
+        try {
+            int cpt = 0;
+            int lon, lat;
+
+            br = new BufferedReader(new FileReader(csvFile));
+            while ((line = br.readLine()) != null) {
+
+                // use comma as separator
+                String[] tokens = line.split(cvsSplitBy);
+                lon = cpt%100;
+                lat = cpt/100;
+                pollutions[lat][lon] = Double.parseDouble(tokens[2]);
+                cpt ++;
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override
@@ -396,6 +439,26 @@ public class OSMReader implements DataReader {
 
             way.setTag("nearby_trees", Integer.toString(nearbyTrees));
 
+            int pollution = 0;
+
+            if ((firstLat < Latmin || lastLat < Latmin || firstLat > Latmax || lastLat > Latmax)
+                    || (firstLon < Lonmin || lastLon < Lonmin || firstLon > Lonmax || lastLon > Lonmax)) {
+                pollution = 0;
+            }
+            else {
+                double stepLat = (Latmax - Latmin) / 99;
+                double stepLon = (Lonmax - Lonmin) / 99;
+
+                int i = (firstLat - Latmin) / stepLat;
+                int j = (firstLon - Lonmin) / stepLon;
+                pollution = (pollutions[i][j] + pollutions[i+1][j] + pollutions[i][j+1] + pollutions[i+1][j+1]) / 8;
+
+                i = (lastLat - Latmin) / stepLat;
+                j = (lastLon - Lonmin) / stepLon;
+                pollution += (pollutions[i][j] + pollutions[i+1][j] + pollutions[i][j+1] + pollutions[i+1][j+1]) / 8;
+            }
+
+            way.setTag("pollution", Integer.toString(pollution));
         }
 
         long wayFlags = encodingManager.handleWayTags(way, includeWay, relationFlags);

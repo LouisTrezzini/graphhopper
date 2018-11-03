@@ -56,11 +56,6 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
     private EncodedValue greennessEncoder;
     private EncodedValue pollutionEncoder;
 
-    private double[][] pollution = new double[100][100];
-    private double pollutionXmin;
-    private double pollutionXmax;
-    private double pollutionYmin;
-    private double pollutionYmax;
 
     /**
      * Should be only instantiated via EncodingManager
@@ -141,23 +136,6 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
         hikingNetworkToCode.put("lwn", UNCHANGED.getValue());
 
         maxPossibleSpeed = SPEED;
-
-        // READ POLLUTION
-        String csvFile = "./pollution.csv";
-
-        CSVReader reader = null;
-        int k = 0;
-        try {
-            reader = new CSVReader(new FileReader(csvFile));
-            String[] line;
-            while ((line = reader.readNext()) != null) {
-                k++;
-                pollution[k / 1000][k % 1000] = Double.parseDouble(line[2]);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //
 
         init();
     }
@@ -346,8 +324,7 @@ public class GreenWalkFlagEncoder extends AbstractFlagEncoder {
 
         flags = greennessEncoder.setValue(flags, greenness);
 
-        // COMPUTE POLLUTION
-        int pollution = 0; // X * 4 + 1
+        int pollution = Integer.parseInt(way.getTag("pollution"));
 
         flags = pollutionEncoder.setValue(flags, pollution);
 
