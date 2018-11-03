@@ -925,6 +925,10 @@ public class GraphHopper implements GraphHopperAPI {
             weighting = new ShortFastestWeighting(encoder, hintsMap);
         }
 
+        if (encoder.getClass() == GreenWalkFlagEncoder.class) {
+            weighting = new GreenWalkWeighting(encoder, hintsMap);
+        }
+
         if (weighting == null)
             throw new IllegalArgumentException("weighting " + weightingStr + " not supported");
 

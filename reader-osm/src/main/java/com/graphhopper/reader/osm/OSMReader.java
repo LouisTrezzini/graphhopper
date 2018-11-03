@@ -31,6 +31,9 @@ import com.graphhopper.routing.weighting.TurnWeighting;
 import com.graphhopper.storage.*;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.GHPoint;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.index.kdtree.KdTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +117,9 @@ public class OSMReader implements DataReader {
     private Date osmDataDate;
     private boolean createStorage = true;
 
+    private KdTree trees = new KdTree();
+    private int treesCount = 0;
+
     public OSMReader(GraphHopperStorage ghStorage) {
         this.ghStorage = ghStorage;
         this.graph = ghStorage;
@@ -160,7 +166,14 @@ public class OSMReader implements DataReader {
             long tmpRelationCounter = 1;
             ReaderElement item;
             while ((item = in.getNext()) != null) {
-                if (item.isType(ReaderElement.WAY)) {
+                if (item.isType(ReaderElement.NODE)) {
+                    final ReaderNode node = (ReaderNode) item;
+                    boolean isTree = "tree".equals(node.getTag("natural"));
+                    if (isTree) {
+                        trees.insert(new Coordinate(node.getLon(), node.getLat()), node);
+                        treesCount++;
+                    }
+                } else if (item.isType(ReaderElement.WAY)) {
                     final ReaderWay way = (ReaderWay) item;
                     boolean valid = filterWay(way);
                     if (valid) {
@@ -265,7 +278,7 @@ public class OSMReader implements DataReader {
 
                     case ReaderElement.WAY:
                         if (wayStart < 0) {
-                            LOGGER.info(nf(counter) + ", now parsing ways");
+                            LOGGER.info(nf(counter) + "/" + treesCount + ", now parsing ways");
                             wayStart = counter;
                         }
                         processWay((ReaderWay) item);
@@ -347,6 +360,42 @@ public class OSMReader implements DataReader {
             } catch (Exception ex) {
                 LOGGER.warn("Parsing error in way with OSMID=" + way.getId() + " : " + ex.getMessage());
             }
+        }
+
+        if (osmNodeIds.size() > 1) {
+            int first = getNodeMap().get(osmNodeIds.get(0));
+            int last = getNodeMap().get(osmNodeIds.get(osmNodeIds.size() - 1));
+            double firstLat = getTmpLatitude(first), firstLon = getTmpLongitude(first);
+            double lastLat = getTmpLatitude(last), lastLon = getTmpLongitude(last);
+
+            double delta = 0.0005;
+
+            Envelope envQuery = new Envelope();
+            envQuery.expandToInclude(firstLon, firstLat);
+            envQuery.expandToInclude(lastLon, lastLat);
+            int nearbyTrees = trees.query(envQuery).size();
+
+//            Envelope firstEnv = new Envelope();
+//            firstEnv.expandToInclude(firstLon, firstLat);
+//            firstEnv.expandBy(delta);
+//
+//            Envelope lastEnv = new Envelope();
+//            lastEnv.expandToInclude(lastLon, lastLat);
+//            lastEnv.expandBy(delta);
+//
+//            int nearbyTrees = trees.query(firstEnv).size() + trees.query(lastEnv).size();
+//
+//            if (way.getId() == 68881723) {
+//                System.out.println(firstEnv);
+//                System.out.println(lastEnv);
+//            }
+
+            if (way.getId() == 68881723) {
+                System.out.println(nearbyTrees);
+            }
+
+            way.setTag("nearby_trees", Integer.toString(nearbyTrees));
+
         }
 
         long wayFlags = encodingManager.handleWayTags(way, includeWay, relationFlags);

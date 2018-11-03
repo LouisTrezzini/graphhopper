@@ -33,6 +33,7 @@ public interface FlagEncoderFactory {
     final String HIKE = "hike";
     final String MOTORCYCLE = "motorcycle";
     final String GENERIC = "generic";
+    final String GREEN_WALK = "green_walk";
     final FlagEncoderFactory DEFAULT = new DefaultFlagEncoderFactory();
 
     FlagEncoder createFlagEncoder(String name, PMap configuration);
