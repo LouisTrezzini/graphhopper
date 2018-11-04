@@ -587,7 +587,12 @@ function routeLatLng(request, doQuery) {
 
         // the routing layer uses the geojson properties.style for the style, see map.js
         var defaultRouteStyle = {color: "#00cc33", "weight": 5, "opacity": 0.6};
-        var highlightRouteStyle = {color: "#00cc33", "weight": 6, "opacity": 0.8};
+        var highlightRouteStyle;
+        if (request.getVehicle().toLowerCase() === "green_walk") {
+            highlightRouteStyle = {color: "#00cc33", "weight": 5, "opacity": 0.6};
+        } else {
+            highlightRouteStyle = {color: "#0033cc", "weight": 5, "opacity": 0.6};
+        }
         var alternativeRouteStye = {color: "darkgray", "weight": 6, "opacity": 0.8};
         var geoJsons = [];
         var firstHeader;
@@ -618,6 +623,8 @@ function routeLatLng(request, doQuery) {
             headerTabs.append(tabHeader);
             var path = json.paths[pathIndex];
             var style = (pathIndex === 0) ? defaultRouteStyle : alternativeRouteStye;
+
+            console.log(path.points);
 
             var geojsonFeature = {
                 "type": "Feature",

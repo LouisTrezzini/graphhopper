@@ -25,8 +25,16 @@ import com.graphhopper.util.PMap;
 public class GreenWalkWeighting extends PriorityWeighting {
     private final double minFactor;
 
+    private boolean considerTree;
+    private boolean considerPollution;
+
     public GreenWalkWeighting(FlagEncoder flagEncoder, PMap pMap) {
         super(flagEncoder, pMap);
+
+        System.out.println(pMap);
+
+        considerTree = pMap.getBool("trees", true);
+        considerPollution = pMap.getBool("pollution", true);
 
         minFactor = 0.2;
     }
@@ -44,11 +52,12 @@ public class GreenWalkWeighting extends PriorityWeighting {
 
         double distance = edge.getDistance();
         double factor = 1 / (0.5 + priority);
-//        if (greenness > 0) {
-//            factor *= 1 / greenness;
-//        }
 
-        if (pollution > 0) {
+        if (considerTree && greenness > 0) {
+            factor *= 1 / greenness;
+        }
+
+        if (considerPollution && pollution > 0) {
             factor *= 1 + (pollution - 5.0) / 4 * 2;
         }
 

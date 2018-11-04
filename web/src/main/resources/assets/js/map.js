@@ -104,11 +104,11 @@ function initMap(bounds, setStartCoord, setIntermediateCoord, setEndCoord, selec
             L.geoJSON(JSON.parse(xhr.responseText), {
                 style: function(feature) {
                     var x = feature.properties.pollution || 0;
-                    var color = fullColorHex(Math.floor(255 * x), Math.floor(255 * (1 - x)), 0);
+                    var color = fullColorHex(Math.floor(255 * x), Math.floor(255 * (1 - x)), Math.floor(255 * (1 - x)));
                     return {
                         "weight": 0,
                         "fillColor": color,
-                        "fillOpacity": 0.5,
+                        "fillOpacity": 0.4,
                     };
                 }
             }).addTo(map);
