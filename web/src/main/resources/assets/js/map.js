@@ -81,6 +81,42 @@ function initMap(bounds, setStartCoord, setIntermediateCoord, setEndCoord, selec
         loadingControl: false
     });
 
+    var rgbToHex = function (rgb) {
+        var hex = Number(rgb).toString(16);
+        if (hex.length < 2) {
+            hex = "0" + hex;
+        }
+        return hex;
+    };
+
+    var fullColorHex = function(r,g,b) {
+        var red = rgbToHex(r);
+        var green = rgbToHex(g);
+        var blue = rgbToHex(b);
+        return "#" + red + green + blue;
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'pollution.json');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            L.geoJSON(JSON.parse(xhr.responseText), {
+                style: function(feature) {
+                    var x = feature.properties.pollution || 0;
+                    var color = fullColorHex(Math.floor(255 * x), Math.floor(255 * (1 - x)), 0);
+                    return {
+                        "weight": 0,
+                        "fillColor": color,
+                        "fillOpacity": 0.5,
+                    };
+                }
+            }).addTo(map);
+        }
+    };
+    xhr.send();
+
+
     var _startItem = {
         text: translate.tr('set_start'),
         icon: './img/marker-small-green.png',
