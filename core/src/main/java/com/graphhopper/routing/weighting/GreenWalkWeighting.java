@@ -44,12 +44,12 @@ public class GreenWalkWeighting extends PriorityWeighting {
 
         double distance = edge.getDistance();
         double factor = 1 / (0.5 + priority);
-        if (greenness > 0) {
-            factor *= 1 / greenness;
-        }
+//        if (greenness > 0) {
+//            factor *= 1 / greenness;
+//        }
 
         if (pollution > 0) {
-            factor *= (pollution - 5.0) / 8.0;
+            factor *= 1 + (pollution - 5.0) / 4 * 2;
         }
 
         factor = Math.max(factor, minFactor);

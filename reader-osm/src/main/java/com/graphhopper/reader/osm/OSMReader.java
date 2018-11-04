@@ -38,9 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.XMLStreamException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static com.graphhopper.util.Helper.nf;
@@ -160,8 +158,6 @@ public class OSMReader implements DataReader {
                 cpt ++;
             }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -439,7 +435,7 @@ public class OSMReader implements DataReader {
 
             way.setTag("nearby_trees", Integer.toString(nearbyTrees));
 
-            int pollution = 0;
+            int pollution;
 
             if ((firstLat < Latmin || lastLat < Latmin || firstLat > Latmax || lastLat > Latmax)
                     || (firstLon < Lonmin || lastLon < Lonmin || firstLon > Lonmax || lastLon > Lonmax)) {
@@ -449,13 +445,15 @@ public class OSMReader implements DataReader {
                 double stepLat = (Latmax - Latmin) / 99;
                 double stepLon = (Lonmax - Lonmin) / 99;
 
-                int i = (firstLat - Latmin) / stepLat;
-                int j = (firstLon - Lonmin) / stepLon;
-                pollution = (pollutions[i][j] + pollutions[i+1][j] + pollutions[i][j+1] + pollutions[i+1][j+1]) / 8;
+                int i = (int) ((firstLat - Latmin) / stepLat);
+                int j = (int) ((firstLon - Lonmin) / stepLon);
+                double tmpPollution = (pollutions[i][j] + pollutions[i+1][j] + pollutions[i][j+1] + pollutions[i+1][j+1]) / 8;
 
-                i = (lastLat - Latmin) / stepLat;
-                j = (lastLon - Lonmin) / stepLon;
-                pollution += (pollutions[i][j] + pollutions[i+1][j] + pollutions[i][j+1] + pollutions[i+1][j+1]) / 8;
+                i = (int) ((lastLat - Latmin) / stepLat);
+                j = (int) ((lastLon - Lonmin) / stepLon);
+                tmpPollution += (pollutions[i][j] + pollutions[i+1][j] + pollutions[i][j+1] + pollutions[i+1][j+1]) / 8;
+
+                pollution = (int) (8 * tmpPollution + 1);
             }
 
             way.setTag("pollution", Integer.toString(pollution));

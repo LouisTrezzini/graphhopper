@@ -22,10 +22,7 @@ import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.routing.weighting.GreenWalkWeighting;
 import com.graphhopper.routing.weighting.PriorityWeighting;
 import com.graphhopper.util.PMap;
-import com.opencsv.CSVReader;
 
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.*;
 
 import static com.graphhopper.routing.util.PriorityCode.*;
